@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import '../widgets/category_card.dart';
 import 'meals_screen.dart';
 import 'meal_detail_screen.dart';
+import 'favorites_screen.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({Key? key}) : super(key: key);
@@ -43,7 +44,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     setState(() {
       _searchQuery = query;
       _filteredCategories = _categories
-          .where((cat) => cat.strCategory.toLowerCase().contains(query.toLowerCase()))
+          .where((cat) =>
+          cat.strCategory.toLowerCase().contains(query.toLowerCase()))
           .toList();
     });
   }
@@ -60,6 +62,15 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     } catch (e) {
       _showError('Error loading the random recipe');
     }
+  }
+
+  void _navigateToFavorites() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const FavoritesScreen(),
+      ),
+    );
   }
 
   void _showError(String message) {
@@ -97,6 +108,18 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
+              icon: const Icon(Icons.favorite_rounded),
+              onPressed: _navigateToFavorites,
+              tooltip: 'Favorites',
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
               icon: const Icon(Icons.shuffle_rounded),
               onPressed: _showRandomMeal,
               tooltip: 'Random recipe',
@@ -120,7 +143,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               decoration: InputDecoration(
                 hintText: 'Search categories...',
                 hintStyle: TextStyle(color: Colors.grey[400]),
-                prefixIcon: Icon(Icons.search_rounded, color: Colors.orange.shade400),
+                prefixIcon: Icon(Icons.search_rounded,
+                    color: Colors.orange.shade400),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                   icon: const Icon(Icons.clear_rounded),
@@ -133,14 +157,16 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                 ),
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                contentPadding:
+                const EdgeInsets.symmetric(vertical: 16),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide(color: Colors.grey.shade200),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: Colors.orange.shade400, width: 2),
+                  borderSide: BorderSide(
+                      color: Colors.orange.shade400, width: 2),
                 ),
               ),
             ),
@@ -151,7 +177,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.search_off_rounded, size: 64, color: Colors.grey[400]),
+                  Icon(Icons.search_off_rounded,
+                      size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   Text(
                     'No categories found',
@@ -169,7 +196,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               itemCount: _filteredCategories.length,
               itemBuilder: (context, index) {
                 return AnimatedOpacity(
-                  duration: Duration(milliseconds: 300 + (index * 50)),
+                  duration:
+                  Duration(milliseconds: 300 + (index * 50)),
                   opacity: 1.0,
                   child: CategoryCard(
                     category: _filteredCategories[index],
@@ -178,7 +206,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => MealsScreen(
-                            category: _filteredCategories[index].strCategory,
+                            category: _filteredCategories[index]
+                                .strCategory,
                           ),
                         ),
                       );

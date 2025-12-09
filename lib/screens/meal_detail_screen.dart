@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/meal_detail.dart';
+import '../models/favorite_meal.dart';
 import '../services/api_service.dart';
+import '../services/favorites_service.dart';
 
 class MealDetailScreen extends StatefulWidget {
   final String mealId;
@@ -14,13 +16,16 @@ class MealDetailScreen extends StatefulWidget {
 
 class _MealDetailScreenState extends State<MealDetailScreen> {
   final ApiService _apiService = ApiService();
+  final FavoritesService _favoritesService = FavoritesService();
   MealDetail? _meal;
   bool _isLoading = true;
+  bool _isFavorite = false;
 
   @override
   void initState() {
     super.initState();
     _loadMealDetails();
+    _checkFavoriteStatus();
   }
 
   Future<void> _loadMealDetails() async {
@@ -33,6 +38,40 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       _showError('Error loading the details');
+    }
+  }
+
+  Future<void> _checkFavoriteStatus() async {
+    try {
+      final isFavorite = await _favoritesService.isFavorite(widget.mealId);
+      setState(() => _isFavorite = isFavorite);
+    } catch (e) {
+      // Ignore error
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (_meal == null) return;
+
+    try {
+      if (_isFavorite) {
+        await _favoritesService.removeFavorite(widget.mealId);
+        setState(() => _isFavorite = false);
+        _showSuccess('Removed from favorites');
+      } else {
+        final favoriteMeal = FavoriteMeal(
+          idMeal: _meal!.idMeal,
+          strMeal: _meal!.strMeal,
+          strMealThumb: _meal!.strMealThumb,
+          strCategory: _meal!.strCategory,
+          addedAt: DateTime.now(),
+        );
+        await _favoritesService.addFavorite(favoriteMeal);
+        setState(() => _isFavorite = true);
+        _showSuccess('Added to favorites');
+      }
+    } catch (e) {
+      _showError('Error updating favorites');
     }
   }
 
@@ -73,6 +112,17 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
     );
   }
 
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,7 +139,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline_rounded, size: 64, color: Colors.grey[400]),
+            Icon(Icons.error_outline_rounded,
+                size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               'Recipe not found!',
@@ -121,10 +172,38 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                 ],
               ),
               child: IconButton(
-                icon: Icon(Icons.arrow_back_rounded, color: Colors.grey[900]),
+                icon: Icon(Icons.arrow_back_rounded,
+                    color: Colors.grey[900]),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
+            actions: [
+              Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    _isFavorite
+                        ? Icons.favorite
+                        : Icons.favorite_border,
+                    color: _isFavorite
+                        ? Colors.red.shade400
+                        : Colors.grey[700],
+                  ),
+                  onPressed: _toggleFavorite,
+                ),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
@@ -187,8 +266,10 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.orange.shade50,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.orange.shade200),
+                                borderRadius:
+                                BorderRadius.circular(20),
+                                border: Border.all(
+                                    color: Colors.orange.shade200),
                               ),
                               child: Row(
                                 children: [
@@ -216,8 +297,10 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.blue.shade50,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.blue.shade200),
+                                borderRadius:
+                                BorderRadius.circular(20),
+                                border: Border.all(
+                                    color: Colors.blue.shade200),
                               ),
                               child: Row(
                                 children: [
@@ -265,7 +348,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey.shade200),
+                              border: Border.all(
+                                  color: Colors.grey.shade200),
                             ),
                             child: Row(
                               children: [
@@ -328,7 +412,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.grey.shade200),
+                            border:
+                            Border.all(color: Colors.grey.shade200),
                           ),
                           child: Text(
                             _meal!.strInstructions,
@@ -344,8 +429,11 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
-                              onPressed: () => _launchYouTube(_meal!.strYoutube),
-                              icon: const Icon(Icons.play_circle_rounded, size: 24),
+                              onPressed: () =>
+                                  _launchYouTube(_meal!.strYoutube),
+                              icon: const Icon(
+                                  Icons.play_circle_rounded,
+                                  size: 24),
                               label: const Text(
                                 'Watch on YouTube',
                                 style: TextStyle(
@@ -356,9 +444,11 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red.shade600,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 16),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius:
+                                  BorderRadius.circular(16),
                                 ),
                                 elevation: 2,
                               ),

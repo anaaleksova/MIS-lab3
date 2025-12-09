@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "596359431390",
+    "project_id": "my-app3010",
+    "storage_bucket": "my-app3010.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:596359431390:android:cee4528282adf322baee4f",
+        "android_client_info": {
+          "package_name": "com.example.recepti_zadaca"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvZoh8jywDTJn6LimtIOemdWijB67ZVOk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

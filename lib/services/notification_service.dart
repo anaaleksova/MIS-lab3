@@ -13,12 +13,10 @@ class NotificationService {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
 
   Future<void> initialize() async {
-    // Иницијализирај timezone
     tz.initializeTimeZones();
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    // iOS settings
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -35,16 +33,12 @@ class NotificationService {
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
-    // Побарај дозвола за нотификации
     await _requestPermissions();
 
-    // Конфигурирај Firebase Messaging
     await _configureFCM();
   }
 
-  // Побарај дозволи
   Future<void> _requestPermissions() async {
-    // Firebase Messaging дозвола
     NotificationSettings settings = await _firebaseMessaging.requestPermission(
       alert: true,
       badge: true,
@@ -53,25 +47,16 @@ class NotificationService {
     );
 
     print('User granted permission: ${settings.authorizationStatus}');
-
-    // Android 13+ дозвола за нотификации
-    // За версија 15.x, дозволата се бара автоматски преку Firebase Messaging
-    // Не е потребен посебен повик за Android local notifications
   }
 
-  // Конфигурација на Firebase Cloud Messaging
   Future<void> _configureFCM() async {
-    // Земи FCM token
     String? token = await _firebaseMessaging.getToken();
     print('FCM Token: $token');
 
-    // Слушај foreground пораки
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
-    // Слушај background пораки
     FirebaseMessaging.onMessageOpenedApp.listen(_handleBackgroundMessage);
 
-    // Провери дали има notification што ја отворила апликацијата
     RemoteMessage? initialMessage =
     await _firebaseMessaging.getInitialMessage();
     if (initialMessage != null) {
@@ -79,7 +64,6 @@ class NotificationService {
     }
   }
 
-  // Прикажи нотификација од foreground
   void _handleForegroundMessage(RemoteMessage message) {
     RemoteNotification? notification = message.notification;
     AndroidNotification? android = message.notification?.android;
@@ -93,19 +77,14 @@ class NotificationService {
     }
   }
 
-  // Handle background message tap
   void _handleBackgroundMessage(RemoteMessage message) {
     print('Background message tapped: ${message.messageId}');
-    // Тука можете да додадете навигација до специфичен екран
   }
 
-  // Handle local notification tap
   void _onNotificationTapped(NotificationResponse response) {
     print('Notification tapped: ${response.payload}');
-    // Тука можете да додадете навигација до специфичен екран
   }
 
-  // Прикажи едноставна нотификација
   Future<void> _showNotification({
     required int id,
     required String title,
@@ -136,13 +115,12 @@ class NotificationService {
     await _localNotifications.show(id, title, body, details, payload: payload);
   }
 
-  // Закажи дневна нотификација (на пр. секој ден во 10:00)
   Future<void> scheduleDailyRecipeNotification() async {
     await _localNotifications.zonedSchedule(
-      0, // notification id
+      0,
       'Recipe of the Day! 🍽️',
       'Discover a delicious random recipe today!',
-      _nextInstanceOfTime(10, 0), // 10:00 AM
+      _nextInstanceOfTime(10,0),
       const NotificationDetails(
         android: AndroidNotificationDetails(
           'daily_recipe_channel',
@@ -165,7 +143,6 @@ class NotificationService {
     );
   }
 
-  // Пресметај следно време за нотификација
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
     tz.TZDateTime scheduledDate = tz.TZDateTime(
@@ -177,7 +154,6 @@ class NotificationService {
       minute,
     );
 
-    // Ако времето помина денес, закажи за утре
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
@@ -185,18 +161,60 @@ class NotificationService {
     return scheduledDate;
   }
 
-  // Откажи ги сите нотификации
   Future<void> cancelAllNotifications() async {
     await _localNotifications.cancelAll();
   }
 
-  // Откажи специфична нотификација
   Future<void> cancelNotification(int id) async {
     await _localNotifications.cancel(id);
   }
+
+  Future<void> scheduleTestNotification() async {
+    final tz.TZDateTime scheduledTime = tz.TZDateTime.now(tz.local).add(
+      const Duration(seconds: 10),
+    );
+
+    await _localNotifications.zonedSchedule(
+      999,
+      'ТЕСТ: Рецепт на денот 🍽️',
+      'Оваа е тест нотификација! Апликацијата работи.',
+      scheduledTime,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'daily_recipe_channel',
+          'Daily Recipe',
+          channelDescription: 'Daily recipe reminders',
+          importance: Importance.max,
+          priority: Priority.high,
+          playSound: true,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+      UILocalNotificationDateInterpretation.absoluteTime,
+    );
+
+    print('✅ Тест нотификација закажана за 10 секунди од сега!');
+    print('Време сега: ${tz.TZDateTime.now(tz.local)}');
+    print('Закажано за: $scheduledTime');
+  }
+
+  Future<void> showImmediateTestNotification() async {
+    await _showNotification(
+      id: 998,
+      title: 'ТЕСТ: Веднаш нотификација',
+      body: 'Оваа нотификација се прикажа веднаш!',
+    );
+    print('✅ Веднаш нотификација пратена!');
+  }
 }
 
-// Background message handler (мора да биде top-level функција)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print('Handling a background message: ${message.messageId}');

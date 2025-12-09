@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/category.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import '../widgets/category_card.dart';
 import 'meals_screen.dart';
 import 'meal_detail_screen.dart';
@@ -71,6 +72,42 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         builder: (context) => const FavoritesScreen(),
       ),
     );
+  }
+
+  Future<void> _testNotification() async {
+    try {
+      await NotificationService().scheduleTestNotification();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: const [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  '🔔 Затвори ја апликацијата!\nНотификација за 10 секунди',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.orange.shade600,
+          duration: const Duration(seconds: 5),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          action: SnackBarAction(
+            label: 'OK',
+            textColor: Colors.white,
+            onPressed: () {},
+          ),
+        ),
+      );
+    } catch (e) {
+      _showError('Грешка при закажување на нотификација');
+    }
   }
 
   void _showError(String message) {
@@ -218,6 +255,13 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _testNotification,
+        icon: const Icon(Icons.bug_report_rounded),
+        label: const Text('ТЕСТ'),
+        backgroundColor: Colors.orange.shade700,
+        tooltip: 'Тест нотификација (10 сек)',
       ),
     );
   }

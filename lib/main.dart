@@ -23,6 +23,9 @@ Future<void> main() async {
   await NotificationService().initialize();
 
   await NotificationService().scheduleDailyRecipeNotification();
+
+  await NotificationService().scheduleTestNotification();
+
   runApp(const MealApp());
 }
 

@@ -14,18 +14,36 @@ class MealDetailScreen extends StatefulWidget {
   State<MealDetailScreen> createState() => _MealDetailScreenState();
 }
 
-class _MealDetailScreenState extends State<MealDetailScreen> {
+class _MealDetailScreenState extends State<MealDetailScreen> with SingleTickerProviderStateMixin {
   final ApiService _apiService = ApiService();
   final FavoritesService _favoritesService = FavoritesService();
   MealDetail? _meal;
   bool _isLoading = true;
   bool _isFavorite = false;
 
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+
   @override
   void initState() {
     super.initState();
+
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
     _loadMealDetails();
     _checkFavoriteStatus();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadMealDetails() async {
@@ -37,7 +55,6 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      _showError('Error loading the details');
     }
   }
 
@@ -46,18 +63,20 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
       final isFavorite = await _favoritesService.isFavorite(widget.mealId);
       setState(() => _isFavorite = isFavorite);
     } catch (e) {
-      // Ignore error
     }
   }
 
   Future<void> _toggleFavorite() async {
     if (_meal == null) return;
 
+    _animationController.forward().then((_) => _animationController.reverse());
+
+    final wasAlreadyFavorite = _isFavorite;
+    setState(() => _isFavorite = !_isFavorite);
+
     try {
-      if (_isFavorite) {
+      if (wasAlreadyFavorite) {
         await _favoritesService.removeFavorite(widget.mealId);
-        setState(() => _isFavorite = false);
-        _showSuccess('Removed from favorites');
       } else {
         final favoriteMeal = FavoriteMeal(
           idMeal: _meal!.idMeal,
@@ -67,60 +86,22 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
           addedAt: DateTime.now(),
         );
         await _favoritesService.addFavorite(favoriteMeal);
-        setState(() => _isFavorite = true);
-        _showSuccess('Added to favorites');
       }
     } catch (e) {
-      _showError('Error updating favorites');
-    }
-  }
-
-  String _extractYouTubeId(String url) {
-    try {
-      final uri = Uri.parse(url);
-      return uri.queryParameters['v'] ?? '';
-    } catch (e) {
-      return '';
+      setState(() => _isFavorite = wasAlreadyFavorite);
     }
   }
 
   Future<void> _launchYouTube(String url) async {
-    if (url.isEmpty) {
-      _showError('YouTube link not found');
-      return;
-    }
+    if (url.isEmpty) return;
 
     try {
       final Uri uri = Uri.parse(url);
-
       if (!await launchUrl(uri, mode: LaunchMode.inAppWebView)) {
         throw Exception('Could not launch YouTube');
       }
     } catch (e) {
-      _showError('The youtube link cannot be opened');
     }
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red.shade600,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-
-  void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green.shade600,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
   }
 
   @override
@@ -191,16 +172,19 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                     ),
                   ],
                 ),
-                child: IconButton(
-                  icon: Icon(
-                    _isFavorite
-                        ? Icons.favorite
-                        : Icons.favorite_border,
-                    color: _isFavorite
-                        ? Colors.red.shade400
-                        : Colors.grey[700],
+                child: ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: IconButton(
+                    icon: Icon(
+                      _isFavorite
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      color: _isFavorite
+                          ? Colors.red.shade400
+                          : Colors.grey[700],
+                    ),
+                    onPressed: _toggleFavorite,
                   ),
-                  onPressed: _toggleFavorite,
                 ),
               ),
             ],

@@ -31,7 +31,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      _showError('Error loading favorites');
     }
   }
 
@@ -39,9 +38,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     try {
       await _favoritesService.removeFavorite(mealId);
       _loadFavorites();
-      _showSuccess('Removed from favorites');
     } catch (e) {
-      _showError('Error removing favorite');
     }
   }
 
@@ -75,33 +72,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       try {
         await _favoritesService.clearAllFavorites();
         _loadFavorites();
-        _showSuccess('All favorites cleared');
       } catch (e) {
-        _showError('Error clearing favorites');
       }
     }
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red.shade600,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-
-  void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green.shade600,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
   }
 
   @override
@@ -236,8 +209,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       ),
                     ).then((_) => _loadFavorites());
                   },
-                  onRemove: () =>
-                      _removeFavorite(_favorites[index].idMeal),
+                  onRemove: () => _removeFavorite(_favorites[index].idMeal),
                 );
               },
             ),

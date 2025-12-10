@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/meal.dart';
+import '../models/meal_detail.dart';
+import '../models/favorite_meal.dart';
 import '../services/api_service.dart';
+import '../services/favorites_service.dart';
 import '../widgets/meal_card.dart';
 import 'meal_detail_screen.dart';
 
@@ -15,8 +18,10 @@ class MealsScreen extends StatefulWidget {
 
 class _MealsScreenState extends State<MealsScreen> {
   final ApiService _apiService = ApiService();
+  final FavoritesService _favoritesService = FavoritesService();
   List<Meal> _meals = [];
   List<Meal> _filteredMeals = [];
+  Set<String> _favoriteMealIds = {};
   bool _isLoading = true;
   String _searchQuery = '';
 
@@ -24,6 +29,7 @@ class _MealsScreenState extends State<MealsScreen> {
   void initState() {
     super.initState();
     _loadMeals();
+    _loadFavorites();
   }
 
   Future<void> _loadMeals() async {
@@ -37,6 +43,52 @@ class _MealsScreenState extends State<MealsScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       _showError('Error loading the meals');
+    }
+  }
+
+  Future<void> _loadFavorites() async {
+    try {
+      final favorites = await _favoritesService.getFavorites();
+      setState(() {
+        _favoriteMealIds = favorites.map((f) => f.idMeal).toSet();
+      });
+    } catch (e) {
+    }
+  }
+
+  Future<void> _toggleFavorite(Meal meal) async {
+    final isFavorite = _favoriteMealIds.contains(meal.idMeal);
+
+    setState(() {
+      if (isFavorite) {
+        _favoriteMealIds.remove(meal.idMeal);
+      } else {
+        _favoriteMealIds.add(meal.idMeal);
+      }
+    });
+
+    try {
+      if (isFavorite) {
+        await _favoritesService.removeFavorite(meal.idMeal);
+      } else {
+        final mealDetail = await _apiService.getMealDetails(meal.idMeal);
+        final favoriteMeal = FavoriteMeal(
+          idMeal: meal.idMeal,
+          strMeal: meal.strMeal,
+          strMealThumb: meal.strMealThumb,
+          strCategory: mealDetail.strCategory,
+          addedAt: DateTime.now(),
+        );
+        await _favoritesService.addFavorite(favoriteMeal);
+      }
+    } catch (e) {
+      setState(() {
+        if (isFavorite) {
+          _favoriteMealIds.add(meal.idMeal);
+        } else {
+          _favoriteMealIds.remove(meal.idMeal);
+        }
+      });
     }
   }
 
@@ -67,7 +119,7 @@ class _MealsScreenState extends State<MealsScreen> {
         MaterialPageRoute(
           builder: (context) => MealDetailScreen(mealId: meal.idMeal),
         ),
-      );
+      ).then((_) => _loadFavorites());
     } catch (e) {
       _showError('Error loading the random recipe');
     }
@@ -189,17 +241,22 @@ class _MealsScreenState extends State<MealsScreen> {
               ),
               itemCount: _filteredMeals.length,
               itemBuilder: (context, index) {
+                final meal = _filteredMeals[index];
+                final isFavorite = _favoriteMealIds.contains(meal.idMeal);
+
                 return MealCard(
-                  meal: _filteredMeals[index],
+                  meal: meal,
+                  isFavorite: isFavorite,
+                  onFavoriteToggle: () => _toggleFavorite(meal),
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => MealDetailScreen(
-                          mealId: _filteredMeals[index].idMeal,
+                          mealId: meal.idMeal,
                         ),
                       ),
-                    );
+                    ).then((_) => _loadFavorites());
                   },
                 );
               },

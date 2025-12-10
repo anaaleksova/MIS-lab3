@@ -28,10 +28,7 @@ class NotificationService {
       iOS: iosSettings,
     );
 
-    await _localNotifications.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: _onNotificationTapped,
-    );
+    await _localNotifications.initialize(initSettings);
 
     await _requestPermissions();
 
@@ -54,14 +51,6 @@ class NotificationService {
     print('FCM Token: $token');
 
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleBackgroundMessage);
-
-    RemoteMessage? initialMessage =
-    await _firebaseMessaging.getInitialMessage();
-    if (initialMessage != null) {
-      _handleBackgroundMessage(initialMessage);
-    }
   }
 
   void _handleForegroundMessage(RemoteMessage message) {
@@ -75,14 +64,6 @@ class NotificationService {
         body: notification.body ?? 'You have a new recipe!',
       );
     }
-  }
-
-  void _handleBackgroundMessage(RemoteMessage message) {
-    print('Background message tapped: ${message.messageId}');
-  }
-
-  void _onNotificationTapped(NotificationResponse response) {
-    print('Notification tapped: ${response.payload}');
   }
 
   Future<void> _showNotification({
@@ -126,7 +107,7 @@ class NotificationService {
           'daily_recipe_channel',
           'Daily Recipe',
           channelDescription: 'Daily recipe reminders at 10:00 AM',
-          importance: Importance.high,
+          importance: Importance.max,
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
         ),
@@ -136,7 +117,7 @@ class NotificationService {
           presentSound: true,
         ),
       ),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
       UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
@@ -161,23 +142,15 @@ class NotificationService {
     return scheduledDate;
   }
 
-  Future<void> cancelAllNotifications() async {
-    await _localNotifications.cancelAll();
-  }
-
-  Future<void> cancelNotification(int id) async {
-    await _localNotifications.cancel(id);
-  }
-
   Future<void> scheduleTestNotification() async {
     final tz.TZDateTime scheduledTime = tz.TZDateTime.now(tz.local).add(
-      const Duration(seconds: 10),
+      const Duration(seconds: 20),
     );
 
     await _localNotifications.zonedSchedule(
       999,
-      'ТЕСТ: Рецепт на денот 🍽️',
-      'Оваа е тест нотификација! Апликацијата работи.',
+      'Test: Recipe of the day 🍽️',
+      'This is a test notification!',
       scheduledTime,
       const NotificationDetails(
         android: AndroidNotificationDetails(
@@ -199,19 +172,6 @@ class NotificationService {
       uiLocalNotificationDateInterpretation:
       UILocalNotificationDateInterpretation.absoluteTime,
     );
-
-    print('✅ Тест нотификација закажана за 10 секунди од сега!');
-    print('Време сега: ${tz.TZDateTime.now(tz.local)}');
-    print('Закажано за: $scheduledTime');
-  }
-
-  Future<void> showImmediateTestNotification() async {
-    await _showNotification(
-      id: 998,
-      title: 'ТЕСТ: Веднаш нотификација',
-      body: 'Оваа нотификација се прикажа веднаш!',
-    );
-    print('✅ Веднаш нотификација пратена!');
   }
 }
 

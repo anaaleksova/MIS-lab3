@@ -5,7 +5,6 @@ class FavoritesService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _collectionName = 'favorites';
 
-  // Додади рецепт во омилени
   Future<void> addFavorite(FavoriteMeal meal) async {
     try {
       await _firestore
@@ -17,7 +16,6 @@ class FavoritesService {
     }
   }
 
-  // Отстрани рецепт од омилени
   Future<void> removeFavorite(String mealId) async {
     try {
       await _firestore
@@ -29,7 +27,6 @@ class FavoritesService {
     }
   }
 
-  // Провери дали рецептот е во омилени
   Future<bool> isFavorite(String mealId) async {
     try {
       final doc = await _firestore
@@ -42,7 +39,6 @@ class FavoritesService {
     }
   }
 
-  // Земи ги сите омилени рецепти
   Future<List<FavoriteMeal>> getFavorites() async {
     try {
       final querySnapshot = await _firestore
@@ -58,7 +54,6 @@ class FavoritesService {
     }
   }
 
-  // Stream на омилени рецепти (за real-time updates)
   Stream<List<FavoriteMeal>> getFavoritesStream() {
     return _firestore
         .collection(_collectionName)
@@ -69,7 +64,6 @@ class FavoritesService {
         .toList());
   }
 
-  // Избриши ги сите омилени
   Future<void> clearAllFavorites() async {
     try {
       final batch = _firestore.batch();

@@ -13,7 +13,6 @@ class FavoriteMeal {
     required this.addedAt,
   });
 
-  // Конвертирај во Map за Firestore
   Map<String, dynamic> toMap() {
     return {
       'idMeal': idMeal,
@@ -24,7 +23,6 @@ class FavoriteMeal {
     };
   }
 
-  // Креирај од Firestore Map
   factory FavoriteMeal.fromMap(Map<String, dynamic> map) {
     return FavoriteMeal(
       idMeal: map['idMeal'] ?? '',
@@ -35,7 +33,6 @@ class FavoriteMeal {
     );
   }
 
-  // Конвертирај во JSON за локално чување
   Map<String, dynamic> toJson() {
     return {
       'idMeal': idMeal,
@@ -46,7 +43,6 @@ class FavoriteMeal {
     };
   }
 
-  // Креирај од JSON
   factory FavoriteMeal.fromJson(Map<String, dynamic> json) {
     return FavoriteMeal(
       idMeal: json['idMeal'] ?? '',

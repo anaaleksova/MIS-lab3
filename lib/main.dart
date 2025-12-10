@@ -1,15 +1,19 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'screens/categories_screen.dart';
+import 'screens/meal_detail_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'services/notification_service.dart';
+import 'services/api_service.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   print('Handling a background message: ${message.messageId}');
 }
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +25,23 @@ Future<void> main() async {
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   await NotificationService().initialize();
+
+  NotificationService().onNotificationTap = (payload) async {
+    if (payload == 'random_recipe') {
+      try {
+        final apiService = ApiService();
+        final meal = await apiService.getRandomMeal();
+
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(
+            builder: (context) => MealDetailScreen(mealId: meal.idMeal),
+          ),
+        );
+      } catch (e) {
+        print('Error loading random recipe: $e');
+      }
+    }
+  };
 
   await NotificationService().scheduleDailyRecipeNotification();
 
@@ -35,6 +56,7 @@ class MealApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'TheMeal Recipes',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

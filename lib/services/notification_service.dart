@@ -12,6 +12,8 @@ class NotificationService {
   FlutterLocalNotificationsPlugin();
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
 
+  Function(String?)? onNotificationTap;
+
   Future<void> initialize() async {
     tz.initializeTimeZones();
 
@@ -28,11 +30,20 @@ class NotificationService {
       iOS: iosSettings,
     );
 
-    await _localNotifications.initialize(initSettings);
+    await _localNotifications.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: _onNotificationTapped,
+    );
 
     await _requestPermissions();
 
     await _configureFCM();
+  }
+
+  void _onNotificationTapped(NotificationResponse response) {
+    if (onNotificationTap != null) {
+      onNotificationTap!(response.payload);
+    }
   }
 
   Future<void> _requestPermissions() async {
@@ -121,6 +132,7 @@ class NotificationService {
       uiLocalNotificationDateInterpretation:
       UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
+      payload: 'random_recipe',
     );
   }
 
@@ -171,6 +183,7 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
       UILocalNotificationDateInterpretation.absoluteTime,
+      payload: 'random_recipe',
     );
   }
 }
